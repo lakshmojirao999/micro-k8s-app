@@ -1,0 +1,163 @@
+k create cm my-config -n datatab --from-literal=confa=exvalue
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: al-pod
+  name: al-pod
+spec:
+  containers:
+  - image: redis
+    name: al-pod
+    env:
+    - name: AL_USER
+      valueFrom:
+        configMapKeyRef:
+          name: al-conf
+          key: al-user
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+2. Create a Pod named secure-pod. Use redis image. Run pod as user 1000 and group 2000.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: secure-pod
+  name: secure-pod
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 2000
+  containers:
+  - image: redis
+    name: secure-pod
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+3. Create a pod manifest file at /root/limited-pod.yaml with name limited-pod and busybox image. Set memory request at 100Mi and limit at 200Mi. You do not need to create the pod.
+
+kubectl run limited-pod --image=busybox --requests='memory=100Mi' --limits='memory=200Mi' --dry-run=client -o yaml > /root/limited-pod.yaml
+
+4. Create a secret db-secret with value MYSQL_ROOT_PASSWORD=YoYoSecret and MYSQL_PASSWORD=XoXoPassword.
+
+kubectl create secret generic db-secret --from-literal=MYSQL_ROOT_PASSWORD=YoYoSecret --from-literal=MYSQL_PASSWORD=XoXoPassword -o yaml --dry-run=client > db-secret.yaml
+5. Create a configmap db-config with value MYSQL_USER=k8s and MYSQL_DATABASE=newdb.
+k create cm db-config --from-literal=MYSQL_USER=k8s --from-literal=MYSQL_DATABASE=newdb-o yaml --dry-run=client > db-config.yaml
+6. Create a pod named mydb with image mysql:5.7 and expose all values of db-secret and db-config as environment variable to pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: mydb
+  name: mydb
+spec:
+  containers:
+  - image: mysql:5.7
+    name: mydb
+    envFrom:
+    - configMapRef:
+        name: db-config
+    - secretRef:
+        name: db-secret
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+7. Create a service account named namaste.
+k create sa namaste
+
+8. Use the service account to create a yo-namaste pod with nginx image.
+k run yo-namaste --image=nginx --serviceaccount=namaste
+
+9. Create a pod mp-hello with image alpine,nginx and consul:1.8. Use command sleep infinity for alpine container.
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: mp-hello
+  name: mp-hello
+spec:
+  containers:
+  - args:
+    - sleep
+    - infinity
+    image: alpine
+    name: alpine
+  - image: nginx
+    name: nginx
+  - image: consul:1.8
+    name: consul
+
+Create a pod myredis with image redis. Define a liveness probe and readiness probe with an initial delay of 5 seconds and command redis-cli PING.
+
+ apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: myredis
+  name: myredis
+spec:
+  containers:
+  - image: redis
+    name: myredis
+    livenessProbe:
+      exec:
+        command:
+        - redis-cli
+        - PING
+      initialDelaySeconds: 5
+    readinessProbe:
+      exec:
+        command:
+        - redis-cli
+        - PING
+      initialDelaySeconds: 5
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}   
+
+Create a pod httptest with image kennethreitz/httpbin. Define a readiness probe at path /status/200 on port 80 of the container.
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: httptest
+  name: httptest
+spec:
+  containers:
+  - image: kennethreitz/httpbin
+    name: httptest
+    readinessProbe:
+      httpGet:
+        path: /status/200
+        port: 80
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+Create a Cron job bespin that runs every 5 minutes(*/5 * * * *) and runs command date. Use alpine image.
+kubectl create cronjob bespin --image=alpine --schedule="*/5 * * * *" -- date
+
+
+
+kubectl label node node01 shuttle=true
+
+
+k get pod -n skywalker --selector=jedi=true -o=jsonpath="{range.items[*]}{.metadata.nam}{.metadata.name},{.spec.containers[0].image}{'\n'}{end}" > /root/jedi-true.txt

@@ -30,7 +30,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: server
-          image: frontend
+          image: 419300280667.dkr.ecr.us-west-2.amazonaws.com/botique:frontend
           ports:
           - containerPort: 8080
           readinessProbe:

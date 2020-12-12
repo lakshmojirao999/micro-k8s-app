@@ -32,7 +32,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: main
-        image: loadgenerator
+        image: 419300280667.dkr.ecr.us-west-2.amazonaws.com/botique:loadgenerator
         env:
         - name: FRONTEND_ADDR
           value: "frontend:80"
